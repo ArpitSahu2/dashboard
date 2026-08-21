@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eSIM Telecom Sales Dashboard</title>
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="header-left">
+        <div class="brand-badge">📶</div>
+        <div class="header-title-group">
+          <h1>eSIM Sales Analytics</h1>
+          <p>Real-time performance metrics powered by Supabase Postgres</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div class="date-picker-wrapper">
+          <label for="reportDatePicker">Report Date</label>
+          <select id="reportDatePicker" aria-label="Select report date">
+            <option value="">Loading dates...</option>
+          </select>
+        </div>
+        <button type="button" class="refresh-btn" id="btnRefresh" title="Refresh data">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>Refresh</span>
+        </button>
+        <button type="button" class="theme-toggle-btn" id="btnThemeToggle" title="Toggle Light/Dark Theme">
+          <span id="themeIcon">🌙</span>
+          <span id="themeLabel">Dark</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Alert / Diagnostic Banner Container -->
+    <div id="alertBanner"></div>
+
+    <!-- Primary KPI Section -->
+    <section class="kpi-section" aria-labelledby="kpi-title">
+      <div class="section-title">
+        <span id="kpi-title">Executive Summary</span>
+        <span class="badge" id="reportDateBadge">Date: --</span>
+      </div>
+      <div class="kpi-grid">
+        <!-- Today Sales -->
+        <div class="kpi-card accent-blue" id="kpiTodaySales">
+          <div class="kpi-header">
+            <span class="kpi-label">Today Sales</span>
+            <div class="kpi-icon">📦</div>
+          </div>
+          <div class="kpi-value" id="valTodaySales">--</div>
+          <div class="kpi-footer">
+            <span>Vs Yesterday</span>
+            <span class="growth-badge neutral" id="badgeTodaySalesGrowth">--</span>
+          </div>
+        </div>
+
+        <!-- Today Revenue -->
+        <div class="kpi-card accent-emerald" id="kpiTodayRevenue">
+          <div class="kpi-header">
+            <span class="kpi-label">Today Revenue</span>
+            <div class="kpi-icon">💰</div>
+          </div>
+          <div class="kpi-value" id="valTodayRevenue">--</div>
+          <div class="kpi-footer">
+            <span>Vs Yesterday</span>
+            <span class="growth-badge neutral" id="badgeTodayRevenueGrowth">--</span>
+          </div>
+        </div>
+
+        <!-- MTD Sales -->
+        <div class="kpi-card accent-indigo" id="kpiMtdSales">
+          <div class="kpi-header">
+            <span class="kpi-label">MTD Sales</span>
+            <div class="kpi-icon">📊</div>
+          </div>
+          <div class="kpi-value" id="valMtdSales">--</div>
+          <div class="kpi-footer">
+            <span>Vs Prev MTD</span>
+            <span class="growth-badge neutral" id="badgeMtdSalesGrowth">--</span>
+          </div>
+        </div>
+
+        <!-- MTD Revenue -->
+        <div class="kpi-card accent-teal" id="kpiMtdRevenue">
+          <div class="kpi-header">
+            <span class="kpi-label">MTD Revenue</span>
+            <div class="kpi-icon">📈</div>
+          </div>
+          <div class="kpi-value" id="valMtdRevenue">--</div>
+          <div class="kpi-footer">
+            <span>Vs Prev MTD</span>
+            <span class="growth-badge neutral" id="badgeMtdRevenueGrowth">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Secondary Performance & AOV Callouts -->
+      <div class="performance-callouts-grid">
+        <div class="secondary-card">
+          <div class="secondary-card-info">
+            <span class="secondary-card-label">Today AOV</span>
+            <span class="secondary-card-value" id="valTodayAov">--</span>
+          </div>
+          <span class="growth-badge neutral" id="badgeTodayAov">Avg Order</span>
+        </div>
+
+        <div class="secondary-card">
+          <div class="secondary-card-info">
+            <span class="secondary-card-label">MTD AOV</span>
+            <span class="secondary-card-value" id="valMtdAov">--</span>
+          </div>
+          <span class="growth-badge neutral" id="badgeMtdAov">Month Avg</span>
+        </div>
+
+        <div class="secondary-card">
+          <div class="secondary-card-info">
+            <span class="secondary-card-label">Prev Month Sales</span>
+            <span class="secondary-card-value" id="valPrevMonthSales">--</span>
+          </div>
+          <span class="growth-badge neutral" id="badgePrevSales">Full Month</span>
+        </div>
+
+        <div class="secondary-card">
+          <div class="secondary-card-info">
+            <span class="secondary-card-label">Prev Month Revenue</span>
+            <span class="secondary-card-value" id="valPrevMonthRevenue">--</span>
+          </div>
+          <span class="growth-badge neutral" id="badgePrevRev">Full Month</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sales Trends Section -->
+    <section class="charts-section" aria-labelledby="trends-title">
+      <div class="section-title">
+        <span id="trends-title">Sales & Revenue Trends</span>
+        <span class="badge">RPC: daily_metrics & monthly_metrics</span>
+      </div>
+
+      <div class="charts-grid">
+        <!-- Daily Sales Chart -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <h2 class="chart-card-title">Daily Sales Trend</h2>
+              <p class="chart-card-subtitle">Volume per day</p>
+            </div>
+          </div>
+          <div class="chart-wrapper" id="dailySalesChartWrapper">
+            <canvas id="dailySalesChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Daily Revenue Chart -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <h2 class="chart-card-title">Daily Revenue Trend</h2>
+              <p class="chart-card-subtitle">Gross revenue ($)</p>
+            </div>
+          </div>
+          <div class="chart-wrapper" id="dailyRevenueChartWrapper">
+            <canvas id="dailyRevenueChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Monthly Sales & Revenue -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <h2 class="chart-card-title">Monthly Trajectory</h2>
+              <p class="chart-card-subtitle">Volume vs Revenue</p>
+            </div>
+          </div>
+          <div class="chart-wrapper" id="monthlySalesChartWrapper">
+            <canvas id="monthlySalesChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Leaderboard Section -->
+    <section class="leaderboard-section" aria-labelledby="leaderboard-title">
+      <div class="section-title">
+        <span id="leaderboard-title">Sales Representative Leaderboard</span>
+        <span class="badge">RPC: leaderboard_metrics</span>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header-bar">
+          <span class="table-header-title">Top Performing Reps (MTD & Daily)</span>
+          <span class="badge" id="repCountBadge">0 Representatives</span>
+        </div>
+        <div class="table-responsive">
+          <table class="leaderboard-table" id="leaderboardTable">
+            <thead>
+              <tr>
+                <th data-sort="rank" class="sorted" style="width: 80px;">Rank <span class="sort-icon">▲</span></th>
+                <th data-sort="rep_name">Representative <span class="sort-icon"></span></th>
+                <th data-sort="mtd_sales" class="num-cell" style="text-align: right;">MTD Sales <span class="sort-icon"></span></th>
+                <th data-sort="mtd_revenue" class="num-cell" style="text-align: right;">MTD Revenue <span class="sort-icon"></span></th>
+                <th data-sort="today_sales" class="num-cell" style="text-align: right;">Today Sales <span class="sort-icon"></span></th>
+                <th data-sort="today_revenue" class="num-cell" style="text-align: right;">Today Revenue <span class="sort-icon"></span></th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardTbody">
+              <tr>
+                <td colspan="6" class="empty-state">
+                  <div class="empty-icon">👥</div>
+                  <div class="empty-title">Loading Leaderboard</div>
+                  <div class="empty-desc">Fetching performance data from Supabase...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Backend Architecture Notice (Product & Destination Analytics) -->
+    <section class="analytics-section" aria-labelledby="analytics-title">
+      <div class="section-title">
+        <span id="analytics-title">Extended Analytics Integration Status</span>
+        <span class="badge">Database Schema Scope</span>
+      </div>
+
+      <div class="analytics-grid">
+        <!-- Product Analytics Scope -->
+        <div class="notice-card">
+          <div>
+            <span class="notice-badge">TODO: Backend Query Integration</span>
+            <h3 class="notice-title">Product Analytics (eSIM vs Plastic, Validity)</h3>
+            <p class="notice-desc">
+              Per strict data integrity requirements, no synthetic mock data is rendered. 
+              The target table <code>public.products</code> is defined in the database schema. Once schema usage permissions are configured, direct aggregation queries will populate top products by sales, revenue, SIM type split, and validity buckets.
+            </p>
+          </div>
+          <div class="notice-meta">
+            Target Source: <code>public.products</code> &amp; <code>public.orders</code>
+          </div>
+        </div>
+
+        <!-- Destination Analytics Scope -->
+        <div class="notice-card">
+          <div>
+            <span class="notice-badge">TODO: Backend Query Integration</span>
+            <h3 class="notice-title">Destination Analytics (Country Distribution)</h3>
+            <p class="notice-desc">
+              Per strict data integrity requirements, no synthetic mock data is rendered.
+              The target table <code>public.destinations</code> is defined in the database schema. Once schema usage permissions are configured, country-level order counts will render as horizontal bar charts.
+            </p>
+          </div>
+          <div class="notice-meta">
+            Target Source: <code>public.destinations</code> &amp; <code>public.orders</code>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
